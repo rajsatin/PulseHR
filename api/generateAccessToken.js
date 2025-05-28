@@ -1,6 +1,10 @@
 import { set } from '@vercel/edge-config';
 
-export default async function handler(req, res) {
+export const config = {
+  runtime: 'edge', // Enables Edge Runtime
+};
+
+export default async function handler(req) {
   try {
     console.log("🔐 Step 1: Requesting Beehive token");
 
@@ -19,18 +23,34 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      return res.status(500).json({
+      return new Response(JSON.stringify({
         error: 'Beehive token fetch failed',
         details: data
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
       });
     }
 
     console.log("✅ Step 2: Saving token using Edge Config SDK");
     await set('access_token', data.access_token);
 
-    return res.status(200).json({ success: true, tokenStored: true });
+    return new Response(JSON.stringify({
+      success: true,
+      tokenStored: true
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+
   } catch (err) {
     console.error("🔥 Unhandled error:", err);
-    return res.status(500).json({ error: 'Internal Server Error', details: err.message });
+    return new Response(JSON.stringify({
+      error: 'Internal Server Error',
+      details: err.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
