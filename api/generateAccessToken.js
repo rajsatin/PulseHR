@@ -1,6 +1,8 @@
+import { set } from '@vercel/edge-config';
+
 export default async function handler(req, res) {
   try {
-    console.log("🔐 Step 1: Calling Beehive OAuth...");
+    console.log("🔐 Step 1: Requesting Beehive token");
 
     const response = await fetch('https://api.beehivehcm.com/oauth/token', {
       method: 'POST',
@@ -15,41 +17,16 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    console.log("✅ Step 2: Beehive responded with:", data);
 
     if (!response.ok) {
-      console.error("❌ Beehive token request failed");
       return res.status(500).json({
-        error: 'Token fetch failed',
+        error: 'Beehive token fetch failed',
         details: data
       });
     }
 
-    console.log("📝 Step 3: Saving to Edge Config...");
-
-    const edgeSaveRes = await fetch(`https://api.vercel.com/v1/edge-config/${process.env.EDGE_CONFIG_ID}/items`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${process.env.EDGE_CONFIG_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        items: [
-          { operation: 'upsert', key: 'access_token', value: data.access_token },
-        //   { operation: 'upsert', key: 'token_expiry', value: Date.now() + 20 * 60 * 1000 }
-        ]
-      })
-    });
-
-    const edgeResult = await edgeSaveRes.json();
-    console.log("✅ Step 4: Edge Config save result:", edgeResult);
-
-    if (!edgeSaveRes.ok) {
-      return res.status(500).json({
-        error: 'Failed to store token in Edge Config',
-        details: edgeResult
-      });
-    }
+    console.log("✅ Step 2: Saving token using Edge Config SDK");
+    await set('access_token', data.access_token);
 
     return res.status(200).json({ success: true, tokenStored: true });
   } catch (err) {
