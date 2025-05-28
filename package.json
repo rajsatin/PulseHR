@@ -10,7 +10,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.8",
     "@vercel/edge-config": "^1.4.0"
   },
-   "type": "module"
+  "type": "module"
 }
