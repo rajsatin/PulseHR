@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   try {
     console.log("🔐 Step 1: Calling Beehive OAuth...");
 
-    const response = await fetch('https://beehive.com/oauth/token', {
+    const response = await fetch('https://api.beehivehcm.com/oauth/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
