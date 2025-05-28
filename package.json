@@ -11,5 +11,6 @@
   "description": "",
   "dependencies": {
     "@vercel/edge-config": "^1.4.0"
-  }
+  },
+   "type": "module"
 }
