@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     const expiry = Date.now() + 19 * 60 * 1000;
 
     const { error: supabaseError } = await supabase
-      .from('tokens')
+      .from('pulsehr_access_token')
       .upsert([{ id: 1, access_token: accessToken, expiry }], { onConflict: 'id' });
 
     if (supabaseError) {

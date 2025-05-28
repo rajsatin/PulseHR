@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   try {
     // Step 1: Get token and expiry from Supabase
     const { data, error } = await supabase
-      .from('tokens')
+      .from('pulsehr_access_token')
       .select('access_token, expiry')
       .eq('id', 1)
       .single();
