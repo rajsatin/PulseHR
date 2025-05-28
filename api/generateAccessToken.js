@@ -1,9 +1,7 @@
-import { set } from '@vercel/edge-config';
+const { set } = require('@vercel/edge-config');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   try {
-    console.log("🔐 Step 1: Requesting Beehive token");
-
     const response = await fetch('https://api.beehivehcm.com/oauth/token', {
       method: 'POST',
       headers: {
@@ -25,19 +23,10 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log("✅ Step 2: Saving token using Edge Config SDK");
     await set('access_token', data.access_token);
 
-    return res.status(200).json({
-      success: true,
-      tokenStored: true
-    });
-
+    return res.status(200).json({ success: true, tokenStored: true });
   } catch (err) {
-    console.error("🔥 Unhandled error:", err);
-    return res.status(500).json({
-      error: 'Internal Server Error',
-      details: err.message
-    });
+    return res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
-}
+};
