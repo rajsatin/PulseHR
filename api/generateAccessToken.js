@@ -1,4 +1,5 @@
-import { supabase } from '../utils/supabase';
+import { supabase } from '../utils/supabase.js';
+
 
 export default async function handler(req, res) {
     const tokenRes = await fetch('https://api.beehive.com/oauth/token', {
