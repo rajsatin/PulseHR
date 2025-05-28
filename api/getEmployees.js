@@ -1,36 +1,79 @@
-import { supabase } from '../utils/supabase';
+import { supabase } from '../utils/supabase.js';
 
 export default async function handler(req, res) {
-  // Step 1: Get token and expiry from Supabase
-  const { data, error } = await supabase
-    .from('tokens')
-    .select('access_token, expiry')
-    .eq('id', 1)
-    .single();
+  try {
+    // Step 1: Get token and expiry from Supabase
+    const { data, error } = await supabase
+      .from('tokens')
+      .select('access_token, expiry')
+      .eq('id', 1)
+      .single();
 
-  if (error || !data) {
-    return res.status(500).json({ error: 'Failed to fetch access token from Supabase', details: error });
-  }
-
-  const { access_token, expiry } = data;
-
-  // Step 2: Check expiry
-  const now = Date.now();
-  if (now > Number(expiry)) {
-    return res.status(401).json({ error: 'Access token expired, please refresh.' });
-  }
-
-  // Step 3: Make API call to Beehive
-  const fromDate = encodeURIComponent('05-May-2025 10:00:00 AM');
-  const url = `https://api.beehivehcm.com/api/employee/allnew?from=${fromDate}`;
-
-  const empRes = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-      'Content-Type': 'application/json'
+    if (error || !data) {
+      console.error('❌ Failed to fetch access token from Supabase:', error);
+      return res.status(500).json({
+        error: 'Failed to fetch access token from Supabase',
+        details: error
+      });
     }
-  });
 
-  const dataRes = await empRes.json();
-  return res.status(empRes.status).json(dataRes);
+    const { access_token, expiry } = data;
+
+    // Step 2: Check expiry
+    const now = Date.now();
+    if (now > Number(expiry)) {
+      console.warn('⚠️ Access token expired:', { expiry, now });
+      return res.status(401).json({ error: 'Access token expired, please refresh.' });
+    }
+
+    // Step 3: Call Beehive employee API
+    const fromDate = encodeURIComponent('05-May-2025 10:00:00 AM');
+    const url = `https://api.beehivehcm.com/api/employee/allnew?from=${fromDate}`;
+
+    let empRes;
+    try {
+      empRes = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (fetchError) {
+      console.error('❌ Error while calling Beehive API:', fetchError);
+      return res.status(502).json({
+        error: 'Failed to reach Beehive API',
+        details: fetchError.message || fetchError.toString()
+      });
+    }
+
+    let dataRes;
+    try {
+      dataRes = await empRes.json();
+    } catch (jsonError) {
+      console.error('❌ Failed to parse Beehive API response:', jsonError);
+      return res.status(502).json({ error: 'Invalid response format from Beehive API' });
+    }
+
+    if (!empRes.ok) {
+      console.warn('⚠️ Beehive API returned error:', {
+        status: empRes.status,
+        body: dataRes
+      });
+      return res.status(empRes.status).json({
+        error: 'Beehive API returned an error',
+        details: dataRes
+      });
+    }
+
+    // ✅ Success
+    console.log('✅ Fetched employee data from Beehive');
+    return res.status(200).json(dataRes);
+
+  } catch (err) {
+    console.error('❌ Unexpected error:', err);
+    return res.status(500).json({
+      error: 'Internal server error',
+      details: err.message || err.toString()
+    });
+  }
 }
