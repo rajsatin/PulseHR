@@ -65,9 +65,22 @@ export default async function handler(req, res) {
       });
     }
 
-    // ✅ Success
-    console.log('✅ Fetched employee data from Beehive');
-    return res.status(200).json(dataRes);
+    // Added for Prod Data - handling Pagination
+
+    // ✅ Add pagination logic here
+    const page = parseInt(req.query.page || '1');
+    const limit = parseInt(req.query.limit || '5');
+    const offset = (page - 1) * limit;
+
+    const paginatedData = dataRes.slice(offset, offset + limit);
+
+    return res.status(200).json({
+      page,
+      limit,
+      total: dataRes.length,
+      hasMore: offset + limit < dataRes.length,
+      data: paginatedData
+    });
 
   } catch (err) {
     console.error('❌ Unexpected error:', err);
